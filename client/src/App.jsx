@@ -1,11 +1,26 @@
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage"; 
+import LoginPage from "./pages/LoginPage";
+import Navbar from "./components/NavBar";
+import Footer from "./components/Footer";
+import RegisterPage from "./pages/Register";
+
 function App() {
   return (
-    <>
-      <div className='bg-red-700 p-6 min-h-screen'>
-        <h1 className='text-4xl text-white font-bold'>Tailwind is working!</h1>
-        <p className='text-green-300 text-lg'>Big sales data dashboard!</p>
-      </div>
-    </>
+    <div className="bg-white  min-h-screen flex flex-col">
+    <BrowserRouter>
+    <Navbar/>
+    <main className="flex-grow">
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage/>}/>
+      </Routes>
+    </main>
+      <Footer/>
+    </BrowserRouter>
+    </div>
   );
 }
 
