@@ -23,17 +23,16 @@ def allowed_file(filename):
 @upload_bp.route('/upload-sales', methods=['POST'])
 @jwt_required()
 def upload_sales():
-    
     user_id = get_jwt_identity()
 
     if 'file' not in request.files:
-        return jsonify({"error" : "No file provided!"}), 400
-    
+        return jsonify({"error": "No file provided!"}), 400
+
     file = request.files["file"]
 
     if file.filename == '':
-        return jsonify({"error" : "No file selected!"}), 400
-    
+        return jsonify({"error": "No file selected!"}), 400
+
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         filepath = os.path.join("uploads", filename)
@@ -41,33 +40,40 @@ def upload_sales():
         file.save(filepath)
 
         try:
-        # read files into pandas data frame
+            # Read file into pandas DataFrame
             df = pd.read_csv(filepath) if filename.endswith(".csv") else pd.read_excel(filepath)
-        # clean and validate the data
+            
+            # Clean and validate the data
             df = clean_sales_data(df)
 
-        # convert df rows into sales object
+            # Loop through rows and create Sale objects
             for _, row in df.iterrows():
-                sale = Sales(
-                    user_id = user_id,
-                    date = pd.to_datetime(row["date"]).date(),
-                    product = row["product"],
-                    region = row["region"],
-                    quantity = int(row["quantity"]),
-                    revenue = float(row["revenue"])
-                )
-                db.session.add(sale)
-            db.session.commit()
+                try:
+                    sale = Sales(
+                    user_id=user_id,
+                    date=pd.to_datetime(row.get("date")).date() if row.get("date") else None,
+                    product=row.get("product", "Unknown"),
+                    region=row.get("region", "Unknown"),
+                    quantity=int(row.get("quantity", 0)),
+                    revenue=float(row.get("revenue", 0)),
+                    payment_method=row.get("payment_method", "N/A"),
+                    gender=row.get("gender", "N/A"),
+                    age=int(row.get("age", 0)),
+                    )
+                    db.session.add(sale)
+                except Exception as e:
+                    print(f"Skipping row due to error: {e}")
+                    continue  # Skip to the next row
 
+            db.session.commit()
             return jsonify({"message": "Sales data uploaded and processed successfully"}), 201
-    
+
         except Exception as e:
             db.session.rollback()
-            return jsonify({"error" : str(e)}),500
-    
+            return jsonify({"error": str(e)}), 500
+
     else:
         return jsonify({"error": "Unsupported file type!"}), 400
-    
 
 # SALES SUMMARY
 
